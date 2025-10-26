@@ -15,6 +15,15 @@ Formula is a Go-based expression evaluation engine that parses formulas into an 
 - Variable support
 - JSON data integration
 
+## Use cases
+
+- Building spreadsheet-like applications
+- Creating rule engines or decision systems
+- Implementing custom calculation engines
+- Building domain-specific languages for business rules
+- Data transformation pipelines
+- Calculations (Finance, Science, Statistics, Engineering, Medical, Legal, etc.)
+
 ## Examples
 
 The project includes several examples demonstrating different use cases:
