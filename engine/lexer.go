@@ -19,6 +19,7 @@ const (
 	TokenTrue
 	TokenFalse
 	TokenEOF
+	TokenComment
 )
 
 type Token struct {
@@ -57,6 +58,48 @@ func (l *Lexer) NextToken() Token {
 	character := l.input[l.pos]
 
 	switch {
+	case character == '#':
+		// Handle single-line comment with '#'
+		start := l.pos
+		l.pos++
+		for l.pos < len(l.input) && l.input[l.pos] != '\n' {
+			l.pos++
+		}
+		comment := string(l.input[start:l.pos])
+		token := Token{Type: TokenComment, Value: comment}
+		if l.debugger != nil {
+			l.debugger.Log(PhaseLexer, 0, fmt.Sprintf("Token: %v", token))
+		}
+		return token
+	case character == '-' && l.pos+1 < len(l.input) && l.input[l.pos+1] == '-':
+		// Handle single-line comment with '--'
+		start := l.pos
+		l.pos += 2
+		for l.pos < len(l.input) && l.input[l.pos] != '\n' {
+			l.pos++
+		}
+		comment := string(l.input[start:l.pos])
+		token := Token{Type: TokenComment, Value: comment}
+		if l.debugger != nil {
+			l.debugger.Log(PhaseLexer, 0, fmt.Sprintf("Token: %v", token))
+		}
+		return token
+	case character == '/' && l.pos+1 < len(l.input) && l.input[l.pos+1] == '*':
+		// Handle multi-line comment /* ... */
+		start := l.pos
+		l.pos += 2
+		for l.pos+1 < len(l.input) && !(l.input[l.pos] == '*' && l.input[l.pos+1] == '/') {
+			l.pos++
+		}
+		if l.pos+1 < len(l.input) {
+			l.pos += 2 // Skip the closing */
+		}
+		comment := string(l.input[start:l.pos])
+		token := Token{Type: TokenComment, Value: comment}
+		if l.debugger != nil {
+			l.debugger.Log(PhaseLexer, 0, fmt.Sprintf("Token: %v", token))
+		}
+		return token
 	case unicode.IsLetter(character):
 		start := l.pos
 		for l.pos < len(l.input) && (unicode.IsLetter(l.input[l.pos]) || l.input[l.pos] == '_') {

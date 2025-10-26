@@ -24,6 +24,9 @@ func NewParser(input string, debugger *Debugger) *Parser {
 
 func (p *Parser) next() {
 	p.curr = p.lex.NextToken()
+	for p.curr.Type == TokenComment {
+		p.curr = p.lex.NextToken()
+	}
 }
 
 func (p *Parser) expect(t TokenType) {
