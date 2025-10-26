@@ -48,6 +48,28 @@ MULTIPLY(
 )
 ```
 
+The dump format of the formula above is like this:
+
+```text
+=== AST Visualization ===
+FuncCall(MULTIPLY)
+    ├── FuncCall(VAR)
+    │   └── Literal(P)
+    └── FuncCall(POW)
+        ├── FuncCall(ADD)
+        │   ├── Literal(1)
+        │   └── FuncCall(DIVIDE)
+        │       ├── FuncCall(VAR)
+        │       │   └── Literal(r)
+        │       └── FuncCall(VAR)
+        │           └── Literal(n)
+        └── FuncCall(MULTIPLY)
+            ├── FuncCall(VAR)
+            │   └── Literal(n)
+            └── FuncCall(VAR)
+                └── Literal(t)
+```
+
 ## Getting Started
 
 ### Prerequisites
