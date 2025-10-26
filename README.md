@@ -25,6 +25,29 @@ The project includes several examples demonstrating different use cases:
 - JSON map processing
 - Compound interest calculations
 
+## Sample Formula
+
+This is a sample formula for Compound Interest Calculation:
+
+```formula
+MULTIPLY(
+  VAR('P'), 
+  POW(
+    ADD(
+      1, 
+      DIVIDE(
+        VAR('r'), 
+        VAR('n')
+      )
+    ), 
+    MULTIPLY(
+      VAR('n'), 
+      VAR('t')
+    )
+  )
+)
+```
+
 ## Getting Started
 
 ### Prerequisites
