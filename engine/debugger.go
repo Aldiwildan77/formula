@@ -24,6 +24,7 @@ type Debug struct {
 type Debugger struct {
 	IsEnabled bool
 	Histories []Debug
+	evalDepth int
 }
 
 func (d *Debugger) Log(phase PhaseType, depth int, message string) {
@@ -47,6 +48,68 @@ func (d *Debugger) Print() {
 	for _, e := range d.Histories {
 		fmt.Printf("[%s]\t[%d]\t%s\n", e.Phase, e.Depth, e.Message)
 	}
+}
+
+func (d *Debugger) EnterFunc(name string, args ...any) {
+	if !d.IsEnabled {
+		return
+	}
+
+	// Build the prefix - continue vertical lines from parent contexts
+	prefix := ""
+	for i := 0; i < d.evalDepth; i++ {
+		prefix += "│   "
+	}
+
+	// Build argument string
+	argStr := ""
+	if len(args) > 0 {
+		argStrs := make([]string, len(args))
+		for i, arg := range args {
+			argStrs[i] = fmt.Sprintf("%v", arg)
+		}
+		argStr = fmt.Sprintf("(%s)", fmt.Sprintf("%v", args[0]))
+		if len(args) > 1 {
+			for i := 1; i < len(args); i++ {
+				argStr = fmt.Sprintf("%s, %v", argStr, args[i])
+			}
+		}
+	} else {
+		argStr = "()"
+	}
+
+	// Use tree branch for function entry
+	branch := "├── "
+	if prefix == "" {
+		branch = ""
+	}
+
+	fmt.Printf("%s%s%s%s\n", prefix, branch, name, argStr)
+	d.Log(PhaseEval, d.evalDepth, fmt.Sprintf("→ %s%s", name, argStr))
+	d.evalDepth++
+}
+
+func (d *Debugger) ExitFunc(name string, result any, err error) {
+	if !d.IsEnabled {
+		return
+	}
+
+	// Build the prefix at current depth (before decrementing)
+	// This shows the result is inside the function context
+	prefix := ""
+	for i := 0; i < d.evalDepth; i++ {
+		prefix += "│   "
+	}
+
+	if err != nil {
+		fmt.Printf("%s%s = ERROR: %v\n", prefix, name, err)
+		d.Log(PhaseEval, d.evalDepth, fmt.Sprintf("← %s error: %v", name, err))
+	} else {
+		fmt.Printf("%s%s = %v\n", prefix, name, result)
+		d.Log(PhaseEval, d.evalDepth, fmt.Sprintf("← %s = %v", name, result))
+	}
+
+	d.evalDepth--
 }
 
 func (d *Debugger) DumpAST(expr core.Expr) {

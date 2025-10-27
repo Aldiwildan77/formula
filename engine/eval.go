@@ -8,15 +8,40 @@ import (
 )
 
 type runtime struct {
-	Vars  core.VarRuntime
-	Funcs core.FuncsRuntime
+	Vars     core.VarRuntime
+	Funcs    core.FuncsRuntime
+	debugger *Debugger
 }
 
-func NewRuntime() core.Runtime {
+func WithDebugger(debugger *Debugger) func(*runtime) {
+	return func(r *runtime) {
+		r.debugger = debugger
+	}
+}
+
+func WithVars(vars core.VarRuntime) func(*runtime) {
+	return func(r *runtime) {
+		r.Vars = vars
+	}
+}
+
+func WithFuncs(funcs core.FuncsRuntime) func(*runtime) {
+	return func(r *runtime) {
+		r.Funcs = funcs
+	}
+}
+
+func NewRuntime(opts ...func(*runtime)) core.Runtime {
+	// Default
 	r := &runtime{
 		Vars:  make(core.VarRuntime),
 		Funcs: make(core.FuncsRuntime),
 	}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
 	r.registerBuiltins()
 	return r
 }
@@ -77,6 +102,7 @@ func (r *runtime) Eval(e core.Expr) (any, error) {
 			return nil, fmt.Errorf("function %s not found", fnName)
 		}
 
+		// Evaluate arguments first
 		var args []any
 		for _, a := range n.Args {
 			v, err := r.Eval(a)
@@ -86,7 +112,20 @@ func (r *runtime) Eval(e core.Expr) (any, error) {
 			args = append(args, v)
 		}
 
-		return fn(args, r)
+		// Track function entry if debugger is enabled
+		if r.debugger != nil {
+			r.debugger.EnterFunc(fnName, args...)
+		}
+
+		// Execute the function
+		result, err := fn(args, r)
+
+		// Track function exit if debugger is enabled
+		if r.debugger != nil {
+			r.debugger.ExitFunc(fnName, result, err)
+		}
+
+		return result, err
 	default:
 		return nil, fmt.Errorf("invalid expr")
 	}
